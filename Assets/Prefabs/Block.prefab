@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 1003945936435291409}
   - component: {fileID: 200046133816684360}
   - component: {fileID: 133086894582540668}
-  - component: {fileID: 8839146147337518909}
   m_Layer: 0
   m_Name: Block
   m_TagString: Block
@@ -138,7 +137,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPrefab: {fileID: 7455376262204422298, guid: eb5d20566b2a5e54e9a25e1fb4f7ae39, type: 3}
-  prefabShowTime: 0.5
+  prefabShowTime: 1
 --- !u!54 &133086894582540668
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -166,19 +165,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 4
   m_CollisionDetection: 0
---- !u!114 &8839146147337518909
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2491953797188768705}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: addec988fd220fb40b8c8cae4a212e15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scoreText: {fileID: 0}
 --- !u!1001 &2590916426844058881
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -4,17 +4,17 @@ using UnityEngine;
 
 public class FinishCube : MonoBehaviour
 {
-    public int pointValue = 5;
-
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Block"))
+        if (other.CompareTag("Block"))
         {
-            Score scoreSystem = FindObjectOfType<Score>();
-            if(scoreSystem != null)
+            
+            if (GameManager.instance != null)
             {
-                scoreSystem.AddPoint(pointValue);
+                GameManager.instance.BlockCleared();
             }
+
+            Destroy(other.gameObject);
         }
     }
 }

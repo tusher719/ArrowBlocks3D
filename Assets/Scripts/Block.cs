@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Block : MonoBehaviour
 {
-    [SerializeField] private float tilesToMove = 10f;
-    [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] float tilesToMove = 10f;
+    [SerializeField] float moveSpeed = 10f;
 
     public enum Direction { Up, Down, Left, Right }
     public Direction blockDirection;
@@ -54,6 +54,8 @@ public class Block : MonoBehaviour
         {
             targetPos = transform.position + direction * tilesToMove;
             isMoving = true;
+
+            GameManager.instance.UseMove();
         }
     }
 
