@@ -13,27 +13,28 @@ public class Block : MonoBehaviour
     private Vector3 targetPos;
     private bool isMoving = false;
 
-    private void Update()
-    {
-        Movement();
-    }
+    AudioPlayer audioPlayer;
 
-    void Movement()
+    void Awake()
     {
-        if (isMoving)
+        audioPlayer = FindObjectOfType<AudioPlayer>();
+        if (audioPlayer == null)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
-            if (Vector3.Distance(transform.position, targetPos) < 0.01f)
-            {
-                isMoving = false;
-            }
+            Debug.LogError("AudioPlayer not found in the scene!", this);
         }
     }
 
     void OnMouseDown()
     {
-        Vector3 direction = GetDirectionVector();
-        Move(direction);
+        if (!isMoving)
+        {
+            Vector3 direction = GetDirectionVector();
+            Vector3 targetPos = transform.position + direction * tilesToMove;
+
+            StartCoroutine(MoveToPosition(targetPos));
+
+            GameManager.instance.UseMove();
+        }
     }
 
     Vector3 GetDirectionVector()
@@ -48,19 +49,40 @@ public class Block : MonoBehaviour
         return Vector3.zero;
     }
 
-    void Move(Vector3 direction)
+    IEnumerator MoveToPosition(Vector3 targetPos)
     {
-        if (!isMoving)
+        isMoving = true;
+        PlayMoveSound();
+        while (Vector3.Distance(transform.position, targetPos) > 0.01f)
         {
-            targetPos = transform.position + direction * tilesToMove;
-            isMoving = true;
-
-            GameManager.instance.UseMove();
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
+            yield return null;
         }
+        transform.position = targetPos;
+        isMoving = false;
+        StopAllSound();
     }
 
     public void StopMovement()
     {
+        StopAllCoroutines();
         isMoving = false;
+        StopAllSound();
+    }
+
+    void PlayMoveSound()
+    {
+        if (audioPlayer != null)
+        {
+            audioPlayer.PlayMoveSound();
+        }
+        audioPlayer.PlayMoveSound();
+    }
+    void StopAllSound()
+    {
+        if (audioPlayer != null)
+        {
+            audioPlayer.StopAllSounds();
+        }
     }
 }

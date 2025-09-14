@@ -7,6 +7,13 @@ public class Obstacle : MonoBehaviour
     public GameObject hitPrefab;
     public float prefabShowTime = 1f;
 
+    AudioPlayer audioPlayer;
+
+    void Awake()
+    {
+        audioPlayer = FindObjectOfType<AudioPlayer>();
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Block"))
@@ -22,6 +29,10 @@ public class Obstacle : MonoBehaviour
             if (blockScript != null)
             {
                 blockScript.StopMovement();
+                if (audioPlayer != null)
+                {
+                    audioPlayer.PlayHitSound();
+                }
             }
         }
     }

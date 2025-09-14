@@ -11,13 +11,21 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     [SerializeField] int totalMoves = 10;
     [SerializeField] TextMeshProUGUI blockText;
-    [SerializeField] float sceneLoadDelay = 2f;
+
+    [Header("UI")]
+    [SerializeField] TextMeshProUGUI moveText;
+
+    [Header("Result Panels")]
+    [SerializeField] GameObject winPanel;
+    [SerializeField] GameObject losePanel;
+
+    [Header("Delays")]
+    [SerializeField] float resultDelay = 1f;
+    
     private int remainingMoves;
     private int totalBlocks;
     private int clearedBlocks = 0;
 
-    [Header("UI")]
-    [SerializeField] TextMeshProUGUI moveText;
 
     private void Awake()
     {
@@ -35,6 +43,9 @@ public class GameManager : MonoBehaviour
         {
             blockText.text = "Blocks: " + totalBlocks;
         }
+        
+        if (winPanel != null) winPanel.SetActive(false);
+        if (losePanel != null) losePanel.SetActive(false);
     }
 
     public void UseMove()
@@ -46,7 +57,7 @@ public class GameManager : MonoBehaviour
 
             if (remainingMoves <= 0 && clearedBlocks < totalBlocks)
             {
-                LoseScene();
+                StartCoroutine(ShowLoseWithDelay());
             }
         }
     }
@@ -72,26 +83,31 @@ public class GameManager : MonoBehaviour
     {
         if (clearedBlocks >= totalBlocks)
         {
-            StartCoroutine(WaitAndLoad("win", sceneLoadDelay));
+            StartCoroutine(ShowWinWithDelay());
         }
     }
 
     // Lost
     private void LoseScene()
     {
-        SceneManager.LoadSceneAsync(2);
+        if (losePanel != null) losePanel.SetActive(true);
+    }
+
+    private IEnumerator ShowWinWithDelay()
+    {
+        yield return new WaitForSeconds(resultDelay);
+        if (winPanel != null) winPanel.SetActive(true);
+    }
+
+    private IEnumerator ShowLoseWithDelay()
+    {
+        yield return new WaitForSeconds(resultDelay);
+        if (losePanel != null) losePanel.SetActive(true);
     }
 
     // Restart
-    public void playAgain()
+    public void PlayAgain()
     {
-        SceneManager.LoadSceneAsync(0);
-    }
-
-    // Win Delay
-    IEnumerator WaitAndLoad(string sceneName, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        SceneManager.LoadSceneAsync(sceneName);
+        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 }

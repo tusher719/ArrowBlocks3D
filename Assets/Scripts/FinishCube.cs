@@ -8,7 +8,12 @@ public class FinishCube : MonoBehaviour
     {
         if (other.CompareTag("Block"))
         {
-            
+            Block blockScript = other.GetComponent<Block>();
+            if (blockScript != null)
+            {
+                blockScript.StopMovement();
+            }
+
             if (GameManager.instance != null)
             {
                 GameManager.instance.BlockCleared();
