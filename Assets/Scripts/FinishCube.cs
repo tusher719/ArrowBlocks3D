@@ -19,6 +19,13 @@ public class FinishCube : MonoBehaviour
                 GameManager.instance.BlockCleared();
             }
 
+            Key key = other.GetComponentInChildren<Key>();
+            if (key != null)
+            {
+                GameManager.instance.AddKey();
+                Destroy(key.gameObject);
+            }
+
             Destroy(other.gameObject);
         }
     }

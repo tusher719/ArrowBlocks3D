@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] TextMeshProUGUI moveText;
+    [SerializeField] TextMeshProUGUI keyText;
 
     [Header("Result Panels")]
     [SerializeField] GameObject winPanel;
@@ -21,10 +22,11 @@ public class GameManager : MonoBehaviour
 
     [Header("Delays")]
     [SerializeField] float resultDelay = 1f;
-    
+
     private int remainingMoves;
     private int totalBlocks;
     private int clearedBlocks = 0;
+    private int collectedKeys = 0;
 
 
     private void Awake()
@@ -43,9 +45,16 @@ public class GameManager : MonoBehaviour
         {
             blockText.text = "Blocks: " + totalBlocks;
         }
-        
+
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
+    }
+
+    
+    public void AddKey()
+    {
+        collectedKeys++;
+        keyText.text = "Keys: " + collectedKeys;
     }
 
     public void UseMove()
