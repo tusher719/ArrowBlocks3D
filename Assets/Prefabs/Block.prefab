@@ -121,7 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9669b39aa19bdb9409a93df097a467b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilesToMove: 30
+  tilesToMove: 50
   moveSpeed: 40
   blockDirection: 1
 --- !u!114 &200046133816684360
