@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26eff802c9ca71d4287c2ffbf810811e, type: 3}
   m_Name: Level_4
   m_EditorClassIdentifier: 
-  levelPrefab: {fileID: 1581059872636444804, guid: ba740b1489338d947b95149af50923e4, type: 3}
-  totalMoves: 18
+  levelPrefab: {fileID: 2688628963060176092, guid: ca3de2c0b1282584fb625280398644dd, type: 3}
+  totalMoves: 28
