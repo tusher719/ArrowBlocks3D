@@ -23,8 +23,6 @@ public class GameManager : MonoBehaviour
     [Header("Levels")]
     [SerializeField] LevelData[] levels;
     [Header("Menu Panel UI")]
-    // [SerializeField] TextMeshProUGUI nextLevelText;
-    // [SerializeField] TextMeshProUGUI nextLevelsText;
     [SerializeField] TextMeshProUGUI[] nextLevelTexts;
 
     private int remainingMoves;
@@ -43,11 +41,15 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        LoadLevel(0);
 
-        if (MenuPanel != null) MenuPanel.SetActive(false);
+        if (MenuPanel != null) MenuPanel.SetActive(true);
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
+
+        currentLevel = null;
+        currentLevelIndex = -1;
+
+        UpdateNextLevelUI();
     }
 
     public void LoadLevel(int index)
@@ -129,12 +131,18 @@ public class GameManager : MonoBehaviour
     private IEnumerator ShowWinWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
+        
+        if (losePanel != null) losePanel.SetActive(false);
+        if (MenuPanel != null) MenuPanel.SetActive(false);
         if (winPanel != null) winPanel.SetActive(true);
     }
 
     private IEnumerator ShowLoseWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
+        
+        if (winPanel != null) winPanel.SetActive(false);  
+        if (MenuPanel != null) MenuPanel.SetActive(false); 
         if (losePanel != null) losePanel.SetActive(true);
     }
 
@@ -145,31 +153,7 @@ public class GameManager : MonoBehaviour
             PlayerData.instance.AddRewards(1, 5);
         }
 
-        // int nextIndex = currentLevelIndex + 1;
-        // if (nextLevelText != null)
-        // {
-        //     if (nextIndex < levels.Length)
-        //         nextLevelText.text = "Next Level: " + (nextIndex + 1);
-        //     else
-        //         nextLevelText.text = "All Levels Completed 🎉";
-        // }
-
-
-        // if (nextLevelsText != null)
-        // {
-        //     string nextLevels = "";
-        //     for (int i = 1; i <= 3; i++) // next 3 levels দেখাবে (2,3,4)
-        //     {
-        //         int nextIndex = currentLevelIndex + i;
-        //         if (nextIndex < levels.Length)
-        //             nextLevels += "Level " + (nextIndex + 1) + "\n";
-        //     }
-
-        //     if (string.IsNullOrEmpty(nextLevels))
-        //         nextLevelsText.text = "All Levels Completed 🎉";
-        //     else
-        //         nextLevelsText.text = nextLevels;
-        // }
+        
 
         UpdateNextLevelUI();
 
@@ -181,7 +165,6 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < nextLevelTexts.Length; i++)
         {
             int nextIndex = currentLevelIndex + (i + 1);
-
             if (nextIndex < levels.Length)
             {
                 nextLevelTexts[i].text = "" + (nextIndex + 1);
@@ -209,11 +192,35 @@ public class GameManager : MonoBehaviour
     // ------------------------
     public void PlayAgain()
     {
-        LoadLevel(currentLevelIndex);
-        if (MenuPanel != null) MenuPanel.SetActive(false);
-        if (winPanel != null) winPanel.SetActive(false);
-        if (losePanel != null) losePanel.SetActive(false);
+        StartCoroutine(ResetAndReloadLevel());
     }
+
+    private IEnumerator ResetAndReloadLevel()
+{
+    Block[] oldBlocks = FindObjectsOfType<Block>();
+    foreach (Block b in oldBlocks)
+    {
+        Destroy(b.gameObject);
+    }
+
+    if (currentLevel != null)
+    {
+        Destroy(currentLevel);
+        currentLevel = null;
+    }
+
+    yield return null;
+
+    clearedBlocks = 0;
+    collectedKeys = 0;
+    totalBlocks = 0;
+
+    LoadLevel(currentLevelIndex);
+
+    if (MenuPanel != null) MenuPanel.SetActive(false);
+    if (winPanel != null) winPanel.SetActive(false);
+    if (losePanel != null) losePanel.SetActive(false);
+}
 
     public void NextLevel()
     {
