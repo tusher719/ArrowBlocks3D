@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Levels")]
     [SerializeField] LevelData[] levels;
+
     [Header("Menu Panel UI")]
     [SerializeField] TextMeshProUGUI[] nextLevelTexts;
 
@@ -33,6 +34,8 @@ public class GameManager : MonoBehaviour
     private GameObject currentLevel;
     private int currentLevelIndex = 0;
 
+    [HideInInspector] public bool allowBlockInput = true;
+
     private void Awake()
     {
         if (instance == null) instance = this;
@@ -41,17 +44,15 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-
-        if (MenuPanel != null) MenuPanel.SetActive(true);
-        if (winPanel != null) winPanel.SetActive(false);
-        if (losePanel != null) losePanel.SetActive(false);
-
-        currentLevel = null;
-        currentLevelIndex = -1;
-
-        UpdateNextLevelUI();
+        LoadLevel(0);
+        if (MenuPanel) MenuPanel.SetActive(false);
+        if (winPanel) winPanel.SetActive(false);
+        if (losePanel) losePanel.SetActive(false);
     }
 
+    // ------------------------
+    //   LEVEL LOAD
+    // ------------------------
     public void LoadLevel(int index)
     {
         if (currentLevel != null)
@@ -63,16 +64,18 @@ public class GameManager : MonoBehaviour
             currentLevelIndex = index;
 
             remainingMoves = levels[index].totalMoves;
-
             clearedBlocks = 0;
             collectedKeys = 0;
+            allowBlockInput = true;
 
             totalBlocks = FindObjectsOfType<Block>().Length;
-
             UpdateUI();
         }
     }
 
+    // ------------------------
+    //   GAMEPLAY UPDATES
+    // ------------------------
     public void AddKey()
     {
         collectedKeys++;
@@ -87,9 +90,11 @@ public class GameManager : MonoBehaviour
             remainingMoves--;
             UpdateMoveUI();
 
-            if (remainingMoves <= 0 && clearedBlocks < totalBlocks)
+            // If last move used — disable all idle blocks
+            if (remainingMoves <= 0)
             {
-                StartCoroutine(ShowLoseWithDelay());
+                allowBlockInput = false;
+                Block.DisableAllIdleBlocks();
             }
         }
     }
@@ -100,22 +105,26 @@ public class GameManager : MonoBehaviour
         if (blockText != null)
             blockText.text = "Blocks: " + (totalBlocks - clearedBlocks);
 
+        // All blocks cleared → Win
         if (clearedBlocks >= totalBlocks)
+        {
             StartCoroutine(ShowWinWithDelay());
+            return;
+        }
+
+        // Moves ended but blocks remain → Lose
+        if (remainingMoves <= 0 && clearedBlocks < totalBlocks)
+        {
+            StartCoroutine(ShowLoseWithDelay());
+        }
     }
 
     private void UpdateUI()
     {
         UpdateMoveUI();
-
-        if (blockText != null)
-            blockText.text = "Blocks: " + totalBlocks;
-
-        if (keyText != null)
-            keyText.text = "Keys: " + collectedKeys;
-
-        if (levelText != null)
-            levelText.text = "Level: " + (currentLevelIndex + 1);
+        if (blockText) blockText.text = "Blocks: " + totalBlocks;
+        if (keyText) keyText.text = "Keys: " + collectedKeys;
+        if (levelText) levelText.text = "Level: " + (currentLevelIndex + 1);
     }
 
     private void UpdateMoveUI()
@@ -125,38 +134,29 @@ public class GameManager : MonoBehaviour
     }
 
     // ------------------------
-    //   WIN / LOSE HANDLING
+    //   FINAL RESULT CHECK
     // ------------------------
-
     private IEnumerator ShowWinWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
-        
-        if (losePanel != null) losePanel.SetActive(false);
-        if (MenuPanel != null) MenuPanel.SetActive(false);
-        if (winPanel != null) winPanel.SetActive(true);
+        if (winPanel) winPanel.SetActive(true);
     }
 
     private IEnumerator ShowLoseWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
-        
-        if (winPanel != null) winPanel.SetActive(false);  
-        if (MenuPanel != null) MenuPanel.SetActive(false); 
-        if (losePanel != null) losePanel.SetActive(true);
+        if (losePanel) losePanel.SetActive(true);
     }
 
+    // ------------------------
+    //   MENU / REWARD
+    // ------------------------
     public void CollectRewardAndShowMenu()
     {
         if (PlayerData.instance != null)
-        {
             PlayerData.instance.AddRewards(1, 5);
-        }
-
-        
 
         UpdateNextLevelUI();
-
         StartCoroutine(ShowMenuAfterDelay(1f));
     }
 
@@ -165,6 +165,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < nextLevelTexts.Length; i++)
         {
             int nextIndex = currentLevelIndex + (i + 1);
+
             if (nextIndex < levels.Length)
             {
                 nextLevelTexts[i].text = "" + (nextIndex + 1);
@@ -178,14 +179,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
     private IEnumerator ShowMenuAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (MenuPanel != null) MenuPanel.SetActive(true);
-        if (winPanel != null) winPanel.SetActive(false);
+        if (MenuPanel) MenuPanel.SetActive(true);
+        if (winPanel) winPanel.SetActive(false);
     }
-
 
     // ------------------------
     //   LEVEL CONTROL
@@ -196,31 +195,29 @@ public class GameManager : MonoBehaviour
     }
 
     private IEnumerator ResetAndReloadLevel()
-{
-    Block[] oldBlocks = FindObjectsOfType<Block>();
-    foreach (Block b in oldBlocks)
     {
-        Destroy(b.gameObject);
+        Block[] oldBlocks = FindObjectsOfType<Block>();
+        foreach (Block b in oldBlocks)
+            Destroy(b.gameObject);
+
+        if (currentLevel != null)
+        {
+            Destroy(currentLevel);
+            currentLevel = null;
+        }
+
+        yield return null;
+
+        clearedBlocks = 0;
+        collectedKeys = 0;
+        totalBlocks = 0;
+
+        LoadLevel(currentLevelIndex);
+
+        if (MenuPanel) MenuPanel.SetActive(false);
+        if (winPanel) winPanel.SetActive(false);
+        if (losePanel) losePanel.SetActive(false);
     }
-
-    if (currentLevel != null)
-    {
-        Destroy(currentLevel);
-        currentLevel = null;
-    }
-
-    yield return null;
-
-    clearedBlocks = 0;
-    collectedKeys = 0;
-    totalBlocks = 0;
-
-    LoadLevel(currentLevelIndex);
-
-    if (MenuPanel != null) MenuPanel.SetActive(false);
-    if (winPanel != null) winPanel.SetActive(false);
-    if (losePanel != null) losePanel.SetActive(false);
-}
 
     public void NextLevel()
     {
@@ -228,8 +225,8 @@ public class GameManager : MonoBehaviour
         if (nextIndex < levels.Length)
         {
             LoadLevel(nextIndex);
-            if (winPanel != null) winPanel.SetActive(false);
-            if (MenuPanel != null) MenuPanel.SetActive(false);
+            if (winPanel) winPanel.SetActive(false);
+            if (MenuPanel) MenuPanel.SetActive(false);
         }
     }
 }

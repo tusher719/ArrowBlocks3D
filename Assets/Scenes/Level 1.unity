@@ -1902,7 +1902,7 @@ MonoBehaviour:
   MenuPanel: {fileID: 1447157185}
   winPanel: {fileID: 48695769}
   losePanel: {fileID: 1711303574}
-  resultDelay: 1
+  resultDelay: 0.1
   levels:
   - {fileID: 11400000, guid: 2dabbefa7b8a2194fbfd864d70f697d8, type: 2}
   - {fileID: 11400000, guid: dcfa8c228de3f624f8713036d063a6d2, type: 2}
@@ -1912,6 +1912,7 @@ MonoBehaviour:
   - {fileID: 62978533}
   - {fileID: 893468107}
   - {fileID: 1774233769}
+  allowBlockInput: 1
 --- !u!4 &774096416
 Transform:
   m_ObjectHideFlags: 0
@@ -5088,7 +5089,7 @@ GameObject:
   - component: {fileID: 1894221875}
   - component: {fileID: 1894221874}
   m_Layer: 5
-  m_Name: Next Level
+  m_Name: Play Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5302,7 +5303,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1974996340
 RectTransform:
   m_ObjectHideFlags: 0
