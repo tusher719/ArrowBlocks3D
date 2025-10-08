@@ -124,7 +124,10 @@ MonoBehaviour:
   tilesToMove: 80
   moveSpeed: 50
   safeDistance: 1.5
-  hitPrefab: {fileID: 7455376262204422298, guid: eb5d20566b2a5e54e9a25e1fb4f7ae39, type: 3}
+  hitFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.3
+  shakeIntensity: 0.1
+  shakeDuration: 0.1
   blockDirection: 0
 --- !u!114 &200046133816684360
 MonoBehaviour:
@@ -138,8 +141,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea7b6a469b28ff94d97e9951011417ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitPrefab: {fileID: 7455376262204422298, guid: eb5d20566b2a5e54e9a25e1fb4f7ae39, type: 3}
-  prefabShowTime: 1
 --- !u!54 &-8936116740539218366
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -35,6 +35,7 @@ public class GameManager : MonoBehaviour
     private int currentLevelIndex = 0;
 
     [HideInInspector] public bool allowBlockInput = true;
+    private bool gameEnded = false;
 
     private void Awake()
     {
@@ -44,10 +45,11 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        LoadLevel(0);
         if (MenuPanel) MenuPanel.SetActive(false);
         if (winPanel) winPanel.SetActive(false);
         if (losePanel) losePanel.SetActive(false);
+        
+        LoadLevel(0);
     }
 
     // ------------------------
@@ -67,9 +69,13 @@ public class GameManager : MonoBehaviour
             clearedBlocks = 0;
             collectedKeys = 0;
             allowBlockInput = true;
+            gameEnded = false;
 
             totalBlocks = FindObjectsOfType<Block>().Length;
+            
             UpdateUI();
+            
+            UpdateKeyUI();
         }
     }
 
@@ -79,8 +85,28 @@ public class GameManager : MonoBehaviour
     public void AddKey()
     {
         collectedKeys++;
+        
+        if (PlayerData.instance != null)
+        {
+            PlayerData.instance.AddKeys(1);
+        }
+        
+        UpdateKeyUI();
+    }
+    
+    private void UpdateKeyUI()
+    {
         if (keyText != null)
-            keyText.text = "Keys: " + collectedKeys;
+        {
+            if (PlayerData.instance != null)
+            {
+                keyText.text = "Keys: " + PlayerData.instance.GetTotalKeys();
+            }
+            else
+            {
+                keyText.text = "Keys: 0";
+            }
+        }
     }
 
     public void UseMove()
@@ -90,31 +116,51 @@ public class GameManager : MonoBehaviour
             remainingMoves--;
             UpdateMoveUI();
 
-            // If last move used — disable all idle blocks
             if (remainingMoves <= 0)
             {
                 allowBlockInput = false;
                 Block.DisableAllIdleBlocks();
+                
+                CheckLoseCondition();
             }
         }
     }
 
     public void BlockCleared()
     {
+        if (gameEnded) return;
+
         clearedBlocks++;
         if (blockText != null)
             blockText.text = "Blocks: " + (totalBlocks - clearedBlocks);
 
-        // All blocks cleared → Win
         if (clearedBlocks >= totalBlocks)
         {
+            gameEnded = true;
             StartCoroutine(ShowWinWithDelay());
             return;
         }
 
-        // Moves ended but blocks remain → Lose
+        CheckLoseCondition();
+    }
+
+    private void CheckLoseCondition()
+    {
+        if (gameEnded) return;
+        
         if (remainingMoves <= 0 && clearedBlocks < totalBlocks)
         {
+            StartCoroutine(CheckLoseAfterDelay(0.5f));
+        }
+    }
+
+    private IEnumerator CheckLoseAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (!gameEnded && remainingMoves <= 0 && clearedBlocks < totalBlocks)
+        {
+            gameEnded = true;
             StartCoroutine(ShowLoseWithDelay());
         }
     }
@@ -123,7 +169,7 @@ public class GameManager : MonoBehaviour
     {
         UpdateMoveUI();
         if (blockText) blockText.text = "Blocks: " + totalBlocks;
-        if (keyText) keyText.text = "Keys: " + collectedKeys;
+        UpdateKeyUI();
         if (levelText) levelText.text = "Level: " + (currentLevelIndex + 1);
     }
 
@@ -154,7 +200,9 @@ public class GameManager : MonoBehaviour
     public void CollectRewardAndShowMenu()
     {
         if (PlayerData.instance != null)
+        {
             PlayerData.instance.AddRewards(1, 5);
+        }
 
         UpdateNextLevelUI();
         StartCoroutine(ShowMenuAfterDelay(1f));

@@ -9,6 +9,7 @@ public class PlayerData : MonoBehaviour
 
     private int totalStars = 0;
     private int totalGems = 0;
+    private int totalKeys = 0;
 
     private void Awake()
     {
@@ -30,18 +31,27 @@ public class PlayerData : MonoBehaviour
         UpdateAllUI();
     }
 
-    public void RegisterUI(TextMeshProUGUI starsText, TextMeshProUGUI gemsText)
+    public void AddKeys(int keys)
+    {
+        totalKeys += keys;
+        UpdateAllUI();
+    }
+
+    public void RegisterUI(TextMeshProUGUI starsText, TextMeshProUGUI gemsText, TextMeshProUGUI keysText)
     {
         if (starsText != null) starsText.text = "" + totalStars;
         if (gemsText != null) gemsText.text = "" + totalGems;
+        if (keysText != null) keysText.text = "" + totalKeys;
     }
 
     public void UpdateAllUI()
     {
         foreach (PlayerUI ui in FindObjectsOfType<PlayerUI>())
         {
-            ui.UpdateUI(totalStars, totalGems);
+            ui.UpdateUI(totalStars, totalGems, totalKeys);
         }
     }
-
+    public int GetTotalKeys() { return totalKeys; }
+    public int GetTotalStars() { return totalStars; }
+    public int GetTotalGems() { return totalGems; }
 }

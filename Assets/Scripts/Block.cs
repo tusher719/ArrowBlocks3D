@@ -9,8 +9,11 @@ public class Block : MonoBehaviour
     [SerializeField] float moveSpeed = 50f;
     [SerializeField] float safeDistance = 1.5f;
 
-    [Header("Effects")]
-    [SerializeField] GameObject hitPrefab;
+    [Header("Hit Effect Settings")]
+    [SerializeField] Color hitFlashColor = Color.red;
+    [SerializeField] float flashDuration = 0.3f;
+    [SerializeField] float shakeIntensity = 0.2f;
+    [SerializeField] float shakeDuration = 0.3f;
 
     public enum Direction { Up, Down, Left, Right }
     public Direction blockDirection;
@@ -19,6 +22,8 @@ public class Block : MonoBehaviour
     private static List<Block> allBlocks = new List<Block>();
     private Rigidbody rb;
     private AudioPlayer audioPlayer;
+
+    public static int movingBlocksCount = 0;
 
     void Awake()
     {
@@ -73,6 +78,8 @@ public class Block : MonoBehaviour
     private IEnumerator MoveBlock(Vector3 direction)
     {
         isMoving = true;
+        movingBlocksCount++;
+        
         Vector3 startPos = transform.position;
         Vector3 endPos = startPos + direction * tilesToMove;
 
@@ -83,18 +90,32 @@ public class Block : MonoBehaviour
         {
             if (hit.collider.CompareTag("Block") || hit.collider.CompareTag("Obstacle"))
             {
-                hitSomething = true;
+                // Check if hit block is moving - if yes, don't stop
+                Block hitBlock = hit.collider.GetComponent<Block>();
+                if (hitBlock != null && hitBlock.isMoving)
+                {
+                    // Hit a moving block - ignore it and keep moving
+                    hitSomething = false;
+                }
+                else
+                {
+                    hitSomething = true;
 
-                // Spawn hit effect
-                if (hitPrefab != null)
-                    Instantiate(hitPrefab, hit.point, Quaternion.identity);
+                    // Flash the hit object's color and shake it
+                    Renderer hitRenderer = hit.collider.GetComponent<Renderer>();
+                    if (hitRenderer != null)
+                    {
+                        StartCoroutine(FlashColor(hitRenderer));
+                        StartCoroutine(ShakeObject(hit.collider.transform));
+                    }
 
-                // Play hit sound
-                audioPlayer?.PlayHitSound();
+                    // Play hit sound
+                    audioPlayer?.PlayHitSound();
 
-                // Stop before obstacle (safeDistance)
-                float stopDist = Mathf.Max(0, hit.distance - safeDistance);
-                endPos = startPos + direction * stopDist;
+                    // Stop before obstacle (safeDistance)
+                    float stopDist = Mathf.Max(0, hit.distance - safeDistance);
+                    endPos = startPos + direction * stopDist;
+                }
             }
         }
 
@@ -111,14 +132,72 @@ public class Block : MonoBehaviour
 
         transform.position = endPos;
         isMoving = false;
+        movingBlocksCount--;
         audioPlayer?.StopAllSounds();
+        
+        // Check if all blocks stopped moving and no moves left
+        if (movingBlocksCount <= 0 && GameManager.instance != null)
+        {
+            if (GameManager.instance.allowBlockInput == false)
+            {
+                // All blocks stopped, trigger final check
+                StartCoroutine(DelayedGameCheck());
+            }
+        }
+    }
+
+    private IEnumerator FlashColor(Renderer targetRenderer)
+    {
+        // Store original color
+        Color originalColor = targetRenderer.material.color;
+
+        // Flash to hit color
+        targetRenderer.material.color = hitFlashColor;
+
+        // Wait for flash duration
+        yield return new WaitForSeconds(flashDuration);
+
+        // Return to original color
+        if (targetRenderer != null)
+            targetRenderer.material.color = originalColor;
+    }
+
+    private IEnumerator ShakeObject(Transform target)
+    {
+        Vector3 originalPosition = target.position;
+        float elapsed = 0f;
+
+        while (elapsed < shakeDuration)
+        {
+            // Random shake offset
+            float x = Random.Range(-1f, 1f) * shakeIntensity;
+            float z = Random.Range(-1f, 1f) * shakeIntensity;
+
+            target.position = originalPosition + new Vector3(x, 0, z);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Return to original position
+        if (target != null)
+            target.position = originalPosition;
     }
 
     public void StopMovement()
     {
         StopAllCoroutines();
-        isMoving = false;
+        if (isMoving)
+        {
+            movingBlocksCount--;
+            isMoving = false;
+        }
         audioPlayer?.StopAllSounds();
+    }
+
+    private IEnumerator DelayedGameCheck()
+    {
+        yield return new WaitForSeconds(0.1f);
     }
 
     public static void DisableAllIdleBlocks()
@@ -126,7 +205,7 @@ public class Block : MonoBehaviour
         foreach (var b in allBlocks)
         {
             if (!b.isMoving)
-                b.enabled = false; // Disable interaction
+                b.enabled = false;
         }
     }
 }

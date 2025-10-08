@@ -298,6 +298,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   starsText: {fileID: 353410310}
   gemsText: {fileID: 1668711413}
+  keysText: {fileID: 0}
 --- !u!1 &62978531
 GameObject:
   m_ObjectHideFlags: 0
@@ -2045,6 +2046,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   starsText: {fileID: 0}
   gemsText: {fileID: 1522961433}
+  keysText: {fileID: 0}
 --- !u!1 &782806592
 GameObject:
   m_ObjectHideFlags: 0
@@ -3742,6 +3744,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   starsText: {fileID: 1391158167}
   gemsText: {fileID: 961197755}
+  keysText: {fileID: 782806594}
 --- !u!1 &1494666740
 GameObject:
   m_ObjectHideFlags: 0
