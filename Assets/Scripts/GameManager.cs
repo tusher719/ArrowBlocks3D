@@ -6,25 +6,22 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    [Header("UI")]
-    [SerializeField] TextMeshProUGUI blockText;
-    [SerializeField] TextMeshProUGUI moveText;
-    [SerializeField] TextMeshProUGUI keyText;
-    [SerializeField] TextMeshProUGUI levelText;
-
-    [Header("Result Panels")]
+    [Header("UI Panels")]
+    [SerializeField] GameObject StartPanel;
     [SerializeField] GameObject MenuPanel;
     [SerializeField] GameObject winPanel;
     [SerializeField] GameObject losePanel;
 
-    [Header("Delays")]
-    [SerializeField] float resultDelay = 1f;
-
-    [Header("Levels")]
-    [SerializeField] LevelData[] levels;
-
-    [Header("Menu Panel UI")]
+    [Header("UI Texts")]
+    [SerializeField] TextMeshProUGUI blockText;
+    [SerializeField] TextMeshProUGUI moveText;
+    [SerializeField] TextMeshProUGUI keyText;
+    [SerializeField] TextMeshProUGUI levelText;
     [SerializeField] TextMeshProUGUI[] nextLevelTexts;
+
+    [Header("Game Settings")]
+    [SerializeField] LevelData[] levels;
+    [SerializeField] float resultDelay = 1f;
 
     private int remainingMoves;
     private int totalBlocks;
@@ -45,16 +42,26 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // Show only Start Panel at launch
+        if (StartPanel) StartPanel.SetActive(true);
         if (MenuPanel) MenuPanel.SetActive(false);
         if (winPanel) winPanel.SetActive(false);
         if (losePanel) losePanel.SetActive(false);
-        
+    }
+
+    // --------------------------------------------------
+    // START GAME
+    // --------------------------------------------------
+    public void StartGame()
+    {
+        // Hide start panel & load level
+        if (StartPanel) StartPanel.SetActive(false);
         LoadLevel(0);
     }
 
-    // ------------------------
-    //   LEVEL LOAD
-    // ------------------------
+    // --------------------------------------------------
+    // LEVEL MANAGEMENT
+    // --------------------------------------------------
     public void LoadLevel(int index)
     {
         if (currentLevel != null)
@@ -72,40 +79,32 @@ public class GameManager : MonoBehaviour
             gameEnded = false;
 
             totalBlocks = FindObjectsOfType<Block>().Length;
-            
             UpdateUI();
-            
             UpdateKeyUI();
         }
     }
 
-    // ------------------------
-    //   GAMEPLAY UPDATES
-    // ------------------------
+    // --------------------------------------------------
+    // GAMEPLAY UPDATES
+    // --------------------------------------------------
     public void AddKey()
     {
         collectedKeys++;
-        
+
         if (PlayerData.instance != null)
-        {
             PlayerData.instance.AddKeys(1);
-        }
-        
+
         UpdateKeyUI();
     }
-    
+
     private void UpdateKeyUI()
     {
         if (keyText != null)
         {
             if (PlayerData.instance != null)
-            {
-                keyText.text = "Keys: " + PlayerData.instance.GetTotalKeys();
-            }
+                keyText.text = "" + PlayerData.instance.GetTotalKeys();
             else
-            {
-                keyText.text = "Keys: 0";
-            }
+                keyText.text = "0";
         }
     }
 
@@ -120,7 +119,6 @@ public class GameManager : MonoBehaviour
             {
                 allowBlockInput = false;
                 Block.DisableAllIdleBlocks();
-                
                 CheckLoseCondition();
             }
         }
@@ -132,7 +130,7 @@ public class GameManager : MonoBehaviour
 
         clearedBlocks++;
         if (blockText != null)
-            blockText.text = "Blocks: " + (totalBlocks - clearedBlocks);
+            blockText.text = "" + (totalBlocks - clearedBlocks);
 
         if (clearedBlocks >= totalBlocks)
         {
@@ -147,17 +145,15 @@ public class GameManager : MonoBehaviour
     private void CheckLoseCondition()
     {
         if (gameEnded) return;
-        
+
         if (remainingMoves <= 0 && clearedBlocks < totalBlocks)
-        {
             StartCoroutine(CheckLoseAfterDelay(0.5f));
-        }
     }
 
     private IEnumerator CheckLoseAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        
+
         if (!gameEnded && remainingMoves <= 0 && clearedBlocks < totalBlocks)
         {
             gameEnded = true;
@@ -165,10 +161,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // --------------------------------------------------
+    // UI UPDATES
+    // --------------------------------------------------
     private void UpdateUI()
     {
         UpdateMoveUI();
-        if (blockText) blockText.text = "Blocks: " + totalBlocks;
+        if (blockText) blockText.text = "" + totalBlocks;
         UpdateKeyUI();
         if (levelText) levelText.text = "Level: " + (currentLevelIndex + 1);
     }
@@ -176,12 +175,12 @@ public class GameManager : MonoBehaviour
     private void UpdateMoveUI()
     {
         if (moveText != null)
-            moveText.text = remainingMoves + " Moves";
+            moveText.text = remainingMoves + " ";
     }
 
-    // ------------------------
-    //   FINAL RESULT CHECK
-    // ------------------------
+    // --------------------------------------------------
+    // RESULT PANELS
+    // --------------------------------------------------
     private IEnumerator ShowWinWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
@@ -194,15 +193,13 @@ public class GameManager : MonoBehaviour
         if (losePanel) losePanel.SetActive(true);
     }
 
-    // ------------------------
-    //   MENU / REWARD
-    // ------------------------
+    // --------------------------------------------------
+    // MENU & REWARD
+    // --------------------------------------------------
     public void CollectRewardAndShowMenu()
     {
         if (PlayerData.instance != null)
-        {
             PlayerData.instance.AddRewards(1, 5);
-        }
 
         UpdateNextLevelUI();
         StartCoroutine(ShowMenuAfterDelay(1f));
@@ -234,9 +231,9 @@ public class GameManager : MonoBehaviour
         if (winPanel) winPanel.SetActive(false);
     }
 
-    // ------------------------
-    //   LEVEL CONTROL
-    // ------------------------
+    // --------------------------------------------------
+    // LEVEL CONTROL
+    // --------------------------------------------------
     public void PlayAgain()
     {
         StartCoroutine(ResetAndReloadLevel());
