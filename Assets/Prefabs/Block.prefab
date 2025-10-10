@@ -126,8 +126,9 @@ MonoBehaviour:
   safeDistance: 1.5
   hitFlashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.3
-  shakeIntensity: 0.1
-  shakeDuration: 0.1
+  chainPushDistance: 0.2
+  chainPushSpeed: 10
+  chainDelay: 0.03
   blockDirection: 0
 --- !u!114 &200046133816684360
 MonoBehaviour:

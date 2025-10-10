@@ -12,8 +12,9 @@ public class Block : MonoBehaviour
     [Header("Hit Effect Settings")]
     [SerializeField] Color hitFlashColor = Color.red;
     [SerializeField] float flashDuration = 0.3f;
-    [SerializeField] float shakeIntensity = 0.2f;
-    [SerializeField] float shakeDuration = 0.3f;
+    [SerializeField] float chainPushDistance = 0.5f; // How far each block pushes forward
+    [SerializeField] float chainPushSpeed = 10f; // Speed of push animation
+    [SerializeField] float chainDelay = 0.05f; // Delay between each chain reaction
 
     public enum Direction { Up, Down, Left, Right }
     public Direction blockDirection;
@@ -23,6 +24,7 @@ public class Block : MonoBehaviour
     private Rigidbody rb;
     private AudioPlayer audioPlayer;
 
+    // Track moving blocks
     public static int movingBlocksCount = 0;
 
     void Awake()
@@ -78,7 +80,7 @@ public class Block : MonoBehaviour
     private IEnumerator MoveBlock(Vector3 direction)
     {
         isMoving = true;
-        movingBlocksCount++;
+        movingBlocksCount++; // Increment when movement starts
         
         Vector3 startPos = transform.position;
         Vector3 endPos = startPos + direction * tilesToMove;
@@ -101,13 +103,19 @@ public class Block : MonoBehaviour
                 {
                     hitSomething = true;
 
-                    // Flash the hit object's color and shake it
-                    Renderer hitRenderer = hit.collider.GetComponent<Renderer>();
-                    if (hitRenderer != null)
+                    // Get the first hit object
+                    GameObject firstHitObject = hit.collider.gameObject;
+
+                    // Flash and animate the FIRST hit object immediately
+                    Renderer firstRenderer = firstHitObject.GetComponent<Renderer>();
+                    if (firstRenderer != null)
                     {
-                        StartCoroutine(FlashColor(hitRenderer));
-                        StartCoroutine(ShakeObject(hit.collider.transform));
+                        StartCoroutine(FlashColor(firstRenderer));
                     }
+                    StartCoroutine(ChainPushAnimation(firstHitObject.transform, direction));
+
+                    // Then start chain reaction for objects AFTER the first hit
+                    StartCoroutine(TriggerChainReaction(hit.point, direction, firstHitObject));
 
                     // Play hit sound
                     audioPlayer?.PlayHitSound();
@@ -132,7 +140,7 @@ public class Block : MonoBehaviour
 
         transform.position = endPos;
         isMoving = false;
-        movingBlocksCount--;
+        movingBlocksCount--; // Decrement when movement ends
         audioPlayer?.StopAllSounds();
         
         // Check if all blocks stopped moving and no moves left
@@ -158,28 +166,97 @@ public class Block : MonoBehaviour
         yield return new WaitForSeconds(flashDuration);
 
         // Return to original color
-        if (targetRenderer != null)
+        if (targetRenderer != null) // Check if still exists
             targetRenderer.material.color = originalColor;
     }
 
-    private IEnumerator ShakeObject(Transform target)
+    private IEnumerator TriggerChainReaction(Vector3 hitPoint, Vector3 direction, GameObject firstHitObject)
+    {
+        List<GameObject> chainObjects = new List<GameObject>();
+        Vector3 checkPosition = hitPoint;
+        
+        // Find all objects in chain direction (AFTER the first hit object)
+        for (int i = 0; i < 10; i++) // Max 10 objects in chain
+        {
+            RaycastHit chainHit;
+            if (Physics.Raycast(checkPosition + direction * 0.1f, direction, out chainHit, tilesToMove))
+            {
+                GameObject hitObj = chainHit.collider.gameObject;
+                
+                // Skip the first hit object (already animated)
+                if (hitObj == firstHitObject)
+                {
+                    checkPosition = chainHit.point;
+                    continue;
+                }
+                
+                if (chainHit.collider.CompareTag("Block") || chainHit.collider.CompareTag("Obstacle"))
+                {
+                    chainObjects.Add(hitObj);
+                    checkPosition = chainHit.point;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // Wait for first animation delay
+        yield return new WaitForSeconds(chainDelay);
+
+        // Trigger chain reaction with delay (NO red flash for these)
+        for (int i = 0; i < chainObjects.Count; i++)
+        {
+            GameObject obj = chainObjects[i];
+            if (obj != null)
+            {
+                // Push and pull back animation ONLY (no red flash)
+                StartCoroutine(ChainPushAnimation(obj.transform, direction));
+            }
+
+            // Delay before next object in chain
+            yield return new WaitForSeconds(chainDelay);
+        }
+    }
+
+    private IEnumerator ChainPushAnimation(Transform target, Vector3 direction)
     {
         Vector3 originalPosition = target.position;
+        Vector3 pushedPosition = originalPosition + direction * chainPushDistance;
+
+        // Push forward
         float elapsed = 0f;
+        float pushTime = chainPushDistance / chainPushSpeed;
 
-        while (elapsed < shakeDuration)
+        while (elapsed < pushTime)
         {
-            // Random shake offset
-            float x = Random.Range(-1f, 1f) * shakeIntensity;
-            float z = Random.Range(-1f, 1f) * shakeIntensity;
-
-            target.position = originalPosition + new Vector3(x, 0, z);
-
+            if (target == null) yield break;
+            
+            target.position = Vector3.Lerp(originalPosition, pushedPosition, elapsed / pushTime);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        // Return to original position
+        if (target != null)
+            target.position = pushedPosition;
+
+        // Pull back
+        elapsed = 0f;
+        while (elapsed < pushTime)
+        {
+            if (target == null) yield break;
+            
+            target.position = Vector3.Lerp(pushedPosition, originalPosition, elapsed / pushTime);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure back to original position
         if (target != null)
             target.position = originalPosition;
     }
@@ -198,6 +275,7 @@ public class Block : MonoBehaviour
     private IEnumerator DelayedGameCheck()
     {
         yield return new WaitForSeconds(0.1f);
+        // This gives time for blocks to settle before checking win/lose
     }
 
     public static void DisableAllIdleBlocks()
@@ -205,7 +283,7 @@ public class Block : MonoBehaviour
         foreach (var b in allBlocks)
         {
             if (!b.isMoving)
-                b.enabled = false;
+                b.enabled = false; // Disable interaction
         }
     }
 }

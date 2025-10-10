@@ -51,7 +51,16 @@ public class PlayerData : MonoBehaviour
             ui.UpdateUI(totalStars, totalGems, totalKeys);
         }
     }
+
+    // Getter methods
     public int GetTotalKeys() { return totalKeys; }
     public int GetTotalStars() { return totalStars; }
     public int GetTotalGems() { return totalGems; }
+    
+    // Setter method for rollback (when level fails)
+    public void SetTotalKeys(int keys)
+    {
+        totalKeys = keys;
+        UpdateAllUI();
+    }
 }

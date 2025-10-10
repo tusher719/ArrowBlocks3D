@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     private int totalBlocks;
     private int clearedBlocks = 0;
     private int collectedKeys = 0;
+    private int levelStartKeys = 0;
 
     private GameObject currentLevel;
     private int currentLevelIndex = 0;
@@ -54,7 +55,7 @@ public class GameManager : MonoBehaviour
     // --------------------------------------------------
     public void StartGame()
     {
-        // Hide start panel & load level
+        // Hide start panel & load first level
         if (StartPanel) StartPanel.SetActive(false);
         LoadLevel(0);
     }
@@ -77,6 +78,12 @@ public class GameManager : MonoBehaviour
             collectedKeys = 0;
             allowBlockInput = true;
             gameEnded = false;
+
+            // Backup current total keys at level start
+            if (PlayerData.instance != null)
+            {
+                levelStartKeys = PlayerData.instance.GetTotalKeys();
+            }
 
             totalBlocks = FindObjectsOfType<Block>().Length;
             UpdateUI();
@@ -190,6 +197,14 @@ public class GameManager : MonoBehaviour
     private IEnumerator ShowLoseWithDelay()
     {
         yield return new WaitForSeconds(resultDelay);
+        
+        // Rollback keys to level start value (level failed)
+        if (PlayerData.instance != null)
+        {
+            PlayerData.instance.SetTotalKeys(levelStartKeys);
+            UpdateKeyUI(); // Update display
+        }
+        
         if (losePanel) losePanel.SetActive(true);
     }
 
