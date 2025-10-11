@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Level_2
   m_EditorClassIdentifier: 
   levelPrefab: {fileID: 8654449840785800209, guid: 2e750252e5c352a48ad5e87c850b9c1b, type: 3}
-  totalMoves: 20
+  totalMoves: 60

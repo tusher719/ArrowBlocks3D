@@ -123,12 +123,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tilesToMove: 80
   moveSpeed: 50
-  safeDistance: 1.5
+  safeDistance: 1.2
   hitFlashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.3
   chainPushDistance: 0.2
   chainPushSpeed: 10
   chainDelay: 0.03
+  maxChainGapDistance: 0.5
   blockDirection: 0
 --- !u!114 &200046133816684360
 MonoBehaviour:

@@ -15,6 +15,7 @@ public class Block : MonoBehaviour
     [SerializeField] float chainPushDistance = 0.5f; // How far each block pushes forward
     [SerializeField] float chainPushSpeed = 10f; // Speed of push animation
     [SerializeField] float chainDelay = 0.05f; // Delay between each chain reaction
+    [SerializeField] float maxChainGapDistance = 2f; // Maximum gap to continue chain reaction
 
     public enum Direction { Up, Down, Left, Right }
     public Direction blockDirection;
@@ -106,16 +107,27 @@ public class Block : MonoBehaviour
                     // Get the first hit object
                     GameObject firstHitObject = hit.collider.gameObject;
 
-                    // Flash and animate the FIRST hit object immediately
-                    Renderer firstRenderer = firstHitObject.GetComponent<Renderer>();
-                    if (firstRenderer != null)
+                    // Check if hit a RotatingObstacle (parent cylinder)
+                    RotatingObstacle rotatingObstacle = firstHitObject.GetComponent<RotatingObstacle>();
+                    
+                    if (rotatingObstacle != null)
                     {
-                        StartCoroutine(FlashColor(firstRenderer));
+                        // Hit the rotating obstacle parent - trigger flash
+                        rotatingObstacle.OnBlockHit();
                     }
-                    StartCoroutine(ChainPushAnimation(firstHitObject.transform, direction));
+                    else
+                    {
+                        // Normal block/obstacle - do flash and push animation
+                        Renderer firstRenderer = firstHitObject.GetComponent<Renderer>();
+                        if (firstRenderer != null)
+                        {
+                            StartCoroutine(FlashColor(firstRenderer));
+                        }
+                        StartCoroutine(ChainPushAnimation(firstHitObject.transform, direction));
 
-                    // Then start chain reaction for objects AFTER the first hit
-                    StartCoroutine(TriggerChainReaction(hit.point, direction, firstHitObject));
+                        // Then start chain reaction for objects AFTER the first hit
+                        StartCoroutine(TriggerChainReaction(hit.point, direction, firstHitObject));
+                    }
 
                     // Play hit sound
                     audioPlayer?.PlayHitSound();
@@ -173,38 +185,67 @@ public class Block : MonoBehaviour
     private IEnumerator TriggerChainReaction(Vector3 hitPoint, Vector3 direction, GameObject firstHitObject)
     {
         List<GameObject> chainObjects = new List<GameObject>();
-        Vector3 checkPosition = hitPoint;
+        GameObject previousObject = firstHitObject;
         
         // Find all objects in chain direction (AFTER the first hit object)
         for (int i = 0; i < 10; i++) // Max 10 objects in chain
         {
+            // Get bounds of previous object
+            Collider prevCollider = previousObject.GetComponent<Collider>();
+            if (prevCollider == null) break;
+            
+            // Calculate the correct edge distance in the movement direction
+            Vector3 prevCenter = prevCollider.bounds.center;
+            Vector3 prevExtents = prevCollider.bounds.extents;
+            
+            // Get the extent in the direction of movement only
+            float edgeDistance = Mathf.Abs(Vector3.Dot(prevExtents, direction));
+            Vector3 previousEdge = prevCenter + direction * (edgeDistance + 0.1f);
+            
             RaycastHit chainHit;
-            if (Physics.Raycast(checkPosition + direction * 0.1f, direction, out chainHit, tilesToMove))
+            // Cast ray from previous object's edge to find next object
+            if (Physics.Raycast(previousEdge, direction, out chainHit, tilesToMove))
             {
                 GameObject hitObj = chainHit.collider.gameObject;
                 
-                // Skip the first hit object (already animated)
-                if (hitObj == firstHitObject)
+                // Skip if hitting the same object (shouldn't happen but just in case)
+                if (hitObj == previousObject)
                 {
-                    checkPosition = chainHit.point;
-                    continue;
+                    break;
                 }
                 
-                if (chainHit.collider.CompareTag("Block") || chainHit.collider.CompareTag("Obstacle"))
+                // Check if valid block/obstacle (NO direction check - accept any direction)
+                if (hitObj.CompareTag("Block") || hitObj.CompareTag("Obstacle"))
                 {
+                    // Calculate gap distance between edges of two objects
+                    float gapDistance = chainHit.distance;
+                    
+                    // If gap is too large, break the chain
+                    if (gapDistance > maxChainGapDistance)
+                    {
+                        break;
+                    }
+                    
+                    // Gap is acceptable - add to chain
                     chainObjects.Add(hitObj);
-                    checkPosition = chainHit.point;
+                    previousObject = hitObj;
                 }
                 else
                 {
+                    // Hit something that's not a block/obstacle
                     break;
                 }
             }
             else
             {
+                // No more objects found
                 break;
             }
         }
+
+        // Only proceed if there are objects in the chain
+        if (chainObjects.Count == 0)
+            yield break;
 
         // Wait for first animation delay
         yield return new WaitForSeconds(chainDelay);
